@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AquaForce – Strict Water Drinking Reminder System</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Favicon SVG Data URI -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563EB'><path d='M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z'/></svg>">
+</head>
+<body>
+  <!-- Background Ambient Glows -->
+  <div class="ambient-glow glow-top-left" aria-hidden="true"></div>
+  <div class="ambient-glow glow-bottom-right" aria-hidden="true"></div>
+
+  <!-- Main Container -->
+  <div class="app-layout">
+    <!-- Top Navigation Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" fill="url(#brandGrad)" stroke="none"/>
+            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+            <path d="M8.5 14a4 4 0 0 0 7 0" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round"/>
+            <defs>
+              <linearGradient id="brandGrad" x1="6" y1="2" x2="18" y2="20" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#06B6D4"/>
+                <stop offset="1" stop-color="#2563EB"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <div class="brand-title-wrap">
+            <h1 class="brand-name">AquaForce</h1>
+            <span class="brand-badge">Strict Hydration</span>
+          </div>
+          <p class="brand-tagline">10-Minute Smart Water Reminder</p>
+        </div>
+      </div>
+
+      <!-- Header Controls -->
+      <div class="header-actions">
+        <!-- Sound Toggle -->
+        <button id="soundToggleBtn" class="action-btn" title="Toggle Reminder Sound" aria-label="Toggle Sound">
+          <svg class="icon icon-sound-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+          <svg class="icon icon-sound-off hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="1" y1="1" x2="23" y2="23"></line>
+            <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path>
+            <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path>
+            <line x1="12" y1="19" x2="12" y2="23"></line>
+            <line x1="8" y1="23" x2="16" y2="23"></line>
+          </svg>
+          <span class="btn-label" id="soundStatusLabel">Sound ON</span>
+        </button>
+
+        <!-- Test Voice Sound Button -->
+        <button id="testVoiceBtn" class="action-btn" title="Test Voice Alert: 'It's time to drink water!'" aria-label="Test Voice Alert">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          <span class="btn-label">Test Voice</span>
+        </button>
+
+        <!-- Notification Toggle -->
+        <button id="notifyToggleBtn" class="action-btn" title="Enable Desktop Notifications" aria-label="Toggle Notifications">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          <span class="btn-label" id="notifyStatusLabel">Alerts</span>
+        </button>
+
+        <!-- Lock Screen Alarm Mode Toggle -->
+        <button id="lockAlarmToggleBtn" class="action-btn active" title="Play sound alarm even when phone screen is locked" aria-label="Lock Screen Alarm Mode">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="5" y="11" width="14" height="10" rx="2"></rect>
+            <circle cx="12" cy="16" r="1"></circle>
+            <path d="M8 11V7a4 4 0 0 1 8 0v4"></path>
+          </svg>
+          <span class="btn-label" id="lockAlarmStatusLabel">Lock Alarm: ON</span>
+        </button>
+
+        <!-- Manual Quick Drink Button -->
+        <button id="manualDrinkBtn" class="btn btn-secondary-outline" title="Log a glass of water right now">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+            <path d="M12 10v6m-3-3h6" stroke-width="2"/>
+          </svg>
+          <span>Drink Now (+250ml)</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Dashboard Grid -->
+    <main class="dashboard-content">
+      <!-- Top Row: Metrics Overview Cards -->
+      <section class="metrics-grid" aria-label="Hydration Metrics">
+        <!-- Stat 1: Completed Sessions -->
+        <div class="stat-card stat-completed">
+          <div class="stat-icon-wrap bg-blue-light">
+            <svg class="stat-icon text-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Today's Completed</span>
+            <div class="stat-value-group">
+              <span id="statCompletedCount" class="stat-number">0</span>
+              <span class="stat-unit">sessions</span>
+            </div>
+            <div class="stat-subtext" id="statVolumeText">0 ml consumed</div>
+          </div>
+        </div>
+
+        <!-- Stat 2: Skipped Reminders -->
+        <div class="stat-card stat-skipped">
+          <div class="stat-icon-wrap bg-amber-light">
+            <svg class="stat-icon text-amber" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Skipped Reminders</span>
+            <div class="stat-value-group">
+              <span id="statSkippedCount" class="stat-number">0</span>
+              <span class="stat-unit">times</span>
+            </div>
+            <div class="stat-subtext text-warning" id="statSkipNote">Strict mode monitors skips</div>
+          </div>
+        </div>
+
+        <!-- Stat 3: Completion Rate -->
+        <div class="stat-card stat-rate">
+          <div class="stat-icon-wrap bg-cyan-light">
+            <svg class="stat-icon text-cyan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Adherence Rate</span>
+            <div class="stat-value-group">
+              <span id="statAdherenceRate" class="stat-number">100%</span>
+            </div>
+            <div class="stat-subtext" id="statRatioText">0 completed / 0 total</div>
+          </div>
+        </div>
+
+        <!-- Stat 4: Active Tracking Time -->
+        <div class="stat-card stat-time">
+          <div class="stat-icon-wrap bg-purple-light">
+            <svg class="stat-icon text-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Total Active Time</span>
+            <div class="stat-value-group">
+              <span id="statActiveTime" class="stat-number">00:00:00</span>
+            </div>
+            <div class="stat-subtext">Today's monitoring session</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Center Row: Hero Countdown Card & Daily Goal Card -->
+      <section class="main-split-section">
+        <!-- Main Timer & Countdown Card -->
+        <div class="card timer-card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Next Drinking Reminder</h2>
+              <p class="card-subtitle">Keep your body energized and alert</p>
+            </div>
+            <div class="timer-status-badge status-idle" id="timerStatusBadge">
+              <span class="status-dot"></span>
+              <span id="timerStatusText">Ready</span>
+            </div>
+          </div>
+
+          <!-- Circular Progress Ring Display -->
+          <div class="timer-display-container">
+            <div class="progress-ring-wrapper">
+              <svg class="progress-ring" viewBox="0 0 280 280">
+                <defs>
+                  <linearGradient id="timerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#06B6D4" />
+                    <stop offset="100%" stop-color="#2563EB" />
+                  </linearGradient>
+                </defs>
+                <!-- Background track -->
+                <circle class="ring-bg" cx="140" cy="140" r="120" />
+                <!-- Dynamic progress circle -->
+                <circle id="timerProgressRing" class="ring-fg" cx="140" cy="140" r="120" />
+              </svg>
+
+              <!-- Central Countdown Content -->
+              <div class="countdown-center-content">
+                <span class="countdown-label">NEXT DRINK IN</span>
+                <div class="countdown-digits" id="countdownDisplay" aria-live="polite">10:00</div>
+                <div class="countdown-subtext" id="countdownSubtext">Every 10 min reminder</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interval Presets & Custom Configuration -->
+          <div class="interval-controller">
+            <div class="interval-header">
+              <span class="interval-title">Reminder Frequency:</span>
+              <span class="current-interval-chip" id="currentIntervalChip">10 Minutes</span>
+            </div>
+            <div class="interval-pills" role="radiogroup" aria-label="Reminder Interval">
+              <button type="button" class="pill-btn" data-minutes="5">5m</button>
+              <button type="button" class="pill-btn active" data-minutes="10">10m</button>
+              <button type="button" class="pill-btn" data-minutes="15">15m</button>
+              <button type="button" class="pill-btn" data-minutes="20">20m</button>
+              <button type="button" class="pill-btn" data-minutes="30">30m</button>
+              <button type="button" class="pill-btn" data-minutes="45">45m</button>
+              <button type="button" class="pill-btn" data-minutes="60">60m</button>
+              
+              <!-- Custom Minutes Input -->
+              <div class="custom-interval-wrapper">
+                <input type="number" id="customMinutesInput" min="1" max="180" placeholder="Custom" aria-label="Custom minutes">
+                <button type="button" id="applyCustomBtn" class="pill-btn-apply" title="Set custom interval">Set</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Timer Action Buttons -->
+          <div class="timer-controls">
+            <!-- Start / Resume Button -->
+            <button id="startTimerBtn" class="btn btn-primary btn-lg">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              <span id="startBtnLabel">Start Reminder</span>
+            </button>
+
+            <!-- Pause Button -->
+            <button id="pauseTimerBtn" class="btn btn-warning btn-lg" disabled>
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="4" width="4" height="16"></rect>
+                <rect x="14" y="4" width="4" height="16"></rect>
+              </svg>
+              <span>Pause</span>
+            </button>
+
+            <!-- Reset Button -->
+            <button id="resetTimerBtn" class="btn btn-outline btn-lg">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 4v6h-6"></path>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+              </svg>
+              <span>Reset</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Daily Hydration Goal & Streak Card -->
+        <div class="card goal-card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Daily Hydration Goal</h2>
+              <p class="card-subtitle">Recommended intake: 8 glasses (2,000 ml)</p>
+            </div>
+            <!-- Streak Badge -->
+            <div class="streak-badge" title="Consecutive hydration days">
+              <svg class="streak-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2c.5 1.5 1.5 3 2.5 4.5 1.8 2.7 3.5 5.5 3.5 8.5 0 4.4-3.6 8-8 8s-8-3.6-8-8c0-4 3-7.5 5.5-10 1-1 2.5-2.2 4.5-3z"/>
+              </svg>
+              <span id="streakCount">1 Day Streak</span>
+            </div>
+          </div>
+
+          <!-- Glass / Bottle Visual Fill Gauge -->
+          <div class="goal-visual-container">
+            <div class="glass-fill-gauge">
+              <div class="gauge-glass">
+                <div class="gauge-water" id="gaugeWaterLevel" style="height: 0%;">
+                  <div class="gauge-wave"></div>
+                  <div class="gauge-bubbles">
+                    <span></span><span></span><span></span><span></span>
+                  </div>
+                </div>
+                <!-- Glass Measurement Markings -->
+                <div class="gauge-markings">
+                  <span class="marking marking-100">100%</span>
+                  <span class="marking marking-75">75%</span>
+                  <span class="marking marking-50">50%</span>
+                  <span class="marking marking-25">25%</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="goal-details">
+              <div class="goal-percentage-wrap">
+                <span class="goal-big-percentage" id="goalPercentage">0%</span>
+                <span class="goal-sub-status" id="goalProgressStatus">Goal Not Started</span>
+              </div>
+              <div class="goal-stats-breakdown">
+                <div class="breakdown-item">
+                  <span class="breakdown-label">Glasses Drank</span>
+                  <span class="breakdown-val"><strong id="glassesDrankText">0</strong> / <span id="targetGlassesText">8</span></span>
+                </div>
+                <div class="breakdown-item">
+                  <span class="breakdown-label">Water Drank</span>
+                  <span class="breakdown-val"><strong id="volumeDrankText">0</strong> / 2000 ml</span>
+                </div>
+                <div class="breakdown-item">
+                  <span class="breakdown-label">Remaining Goal</span>
+                  <span class="breakdown-val" id="remainingGoalText">2000 ml</span>
+                </div>
+              </div>
+
+              <!-- Quick Log +250ml Action -->
+              <button id="quickLogGoalBtn" class="btn btn-primary btn-block">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 5v14M5 12h14"/>
+                </svg>
+                <span>Quick Log 1 Glass (250 ml)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Goal Glasses Mini Visualizer -->
+          <div class="glasses-mini-row" id="glassesMiniRow" aria-label="Visual glasses drank">
+            <!-- Dynamically populated via JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Bottom Row: Activity Timeline & Controls -->
+      <section class="bottom-split-section">
+        <!-- Activity Timeline Card -->
+        <div class="card timeline-card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Today's Activity Timeline</h2>
+              <p class="card-subtitle">Real-time log of drinking sessions and reminders</p>
+            </div>
+            <div class="timeline-actions">
+              <button id="clearHistoryBtn" class="btn-sm btn-ghost" title="Clear today's logs">
+                Clear Timeline
+              </button>
+            </div>
+          </div>
+
+          <!-- Activity Timeline List -->
+          <div class="timeline-container">
+            <ul class="timeline-list" id="activityTimelineList">
+              <li class="timeline-empty" id="timelineEmptyState">
+                <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 14 14"></polyline>
+                </svg>
+                <p>No activity recorded yet today.</p>
+                <span>Start the reminder or click "Drink Now" to begin tracking!</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Strict Mode Guidelines & Reset Options -->
+        <div class="card system-info-card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Strict Reminder System</h2>
+              <p class="card-subtitle">How AquaForce ensures optimal hydration</p>
+            </div>
+          </div>
+
+          <div class="system-features-list">
+            <div class="feature-item">
+              <div class="feature-icon bg-blue-light">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 14 14"/>
+                </svg>
+              </div>
+              <div class="feature-text">
+                <strong>Timestamp Accuracy</strong>
+                <p>Calculates exact timestamps using high-resolution clock and Page Visibility API so inactive tabs never drift.</p>
+              </div>
+            </div>
+
+            <div class="feature-item">
+              <div class="feature-icon bg-cyan-light">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+              </div>
+              <div class="feature-text">
+                <strong>Attention-Grabbing Reminder</strong>
+                <p>Full-screen animated overlay with synthesized water drop acoustics commands focus when it is time to drink.</p>
+              </div>
+            </div>
+
+            <div class="feature-item">
+              <div class="feature-icon bg-amber-light">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+              </div>
+              <div class="feature-text">
+                <strong>Strict Skip Accountability</strong>
+                <p>The CROSS button always lets you dismiss, but records every skip to keep you accountable to your daily health goals.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Danger Zone: Reset Daily Stats -->
+          <div class="reset-zone">
+            <button id="openResetModalBtn" class="btn btn-danger-outline btn-block">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              <span>Reset Today's Statistics</span>
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>AquaForce Strict Hydration System &bull; Pure HTML5, CSS3 &amp; Vanilla JavaScript &bull; Stay Healthy &amp; Hydrated</p>
+    </footer>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FULL SCREEN ATTENTION-GRABBING REMINDER OVERLAY              -->
+  <!-- ============================================================ -->
+  <div id="reminderOverlay" class="reminder-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="reminderTitle">
+    <!-- Ambient Animated Droplet Particles -->
+    <div class="overlay-particles" aria-hidden="true">
+      <span class="particle p-1"></span>
+      <span class="particle p-2"></span>
+      <span class="particle p-3"></span>
+      <span class="particle p-4"></span>
+      <span class="particle p-5"></span>
+      <span class="particle p-6"></span>
+    </div>
+
+    <!-- Main Reminder Card Modal -->
+    <div class="reminder-modal">
+      <!-- Top Close / Dismiss Cross Button (Never Trapping User) -->
+      <button id="overlayCrossBtn" class="overlay-close-btn" title="Dismiss Reminder (Cross)" aria-label="Dismiss Reminder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+
+      <!-- Water Reminder Header -->
+      <div class="reminder-badge">
+        <span class="pulse-dot"></span>
+        <span>AQUAFORCE HYDRATION ALERT</span>
+      </div>
+
+      <!-- Large Animated Water Glass Illustration -->
+      <div class="glass-illustration-wrap">
+        <div class="animated-water-glass">
+          <!-- Glass Body -->
+          <div class="glass-cup">
+            <!-- Water Liquid Level with Waves & Bubbles -->
+            <div class="glass-liquid">
+              <div class="water-wave-top"></div>
+              <div class="water-liquid-body">
+                <div class="bubble b1"></div>
+                <div class="bubble b2"></div>
+                <div class="bubble b3"></div>
+                <div class="bubble b4"></div>
+                <div class="bubble b5"></div>
+              </div>
+            </div>
+            <!-- Glass Rim Highlight -->
+            <div class="glass-rim"></div>
+            <!-- Glass Shininess & Specular Highlights -->
+            <div class="glass-reflection-left"></div>
+            <div class="glass-reflection-right"></div>
+          </div>
+          <!-- Splash Droplets -->
+          <div class="droplet d1"></div>
+          <div class="droplet d2"></div>
+          <div class="droplet d3"></div>
+        </div>
+      </div>
+
+      <!-- Attention Grabbing Message -->
+      <div class="reminder-text-content">
+        <h2 id="reminderTitle" class="reminder-headline">TIME TO DRINK WATER!</h2>
+        <p class="reminder-subheadline">
+          Stand up, grab a full glass of fresh water (approx. <strong>250 ml</strong>), and take a mindful drink right now.
+        </p>
+        <p class="reminder-health-tip" id="randomHealthTip">
+          💧 Drinking water refreshes your brain, clears mental fatigue, and boosts focus.
+        </p>
+      </div>
+
+      <!-- Action Buttons: DONE and CROSS -->
+      <div class="reminder-actions-group">
+        <!-- 1. DONE Button -->
+        <button id="overlayDoneBtn" class="btn btn-done-action">
+          <svg class="action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <div class="btn-text-block">
+            <span class="btn-main-title">DONE – I Drank Water</span>
+            <span class="btn-sub-title">+1 Session &bull; Restart 10m Timer</span>
+          </div>
+        </button>
+
+        <!-- 2. CROSS Button (Secondary action with clear skip note) -->
+        <button id="overlaySkipBtn" class="btn btn-skip-action">
+          <svg class="action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+          <div class="btn-text-block">
+            <span class="btn-main-title">CROSS (X) – Dismiss Reminder</span>
+            <span class="btn-sub-title">Will be logged as skipped</span>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- CONFIRMATION MODAL: RESET TODAY'S STATS                      -->
+  <!-- ============================================================ -->
+  <div id="resetModal" class="confirm-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="resetModalTitle">
+    <div class="confirm-modal-card">
+      <div class="confirm-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </div>
+      <h3 id="resetModalTitle" class="confirm-title">Reset Today's Statistics?</h3>
+      <p class="confirm-desc">
+        Are you sure you want to reset all completed drinking sessions, skipped reminders, and the activity timeline for today? This action cannot be undone.
+      </p>
+      <div class="confirm-actions">
+        <button id="cancelResetBtn" class="btn btn-outline">Cancel</button>
+        <button id="confirmResetBtn" class="btn btn-danger">Yes, Reset Stats</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Audio Element for Reminder Voice -->
+  <audio id="reminderAudio" src="reminder.mp3" preload="auto"></audio>
+  <!-- Background Silent Keep-Alive Audio (Prevents Mobile OS from sleeping tab) -->
+  <audio id="keepAliveAudio" src="silence.wav" preload="auto" loop></audio>
+
+  <!-- Main JavaScript File -->
+  <script src="script.js"></script>
+</body>
+</html>
