@@ -21,6 +21,7 @@
   // --- Configuration Constants ---
   const CONFIG = {
     DEFAULT_INTERVAL_MINUTES: 10,
+    DEFAULT_GOAL_LITERS: 2,
     VOLUME_PER_GLASS_ML: 250,
     DAILY_GOAL_GLASSES: 8,
     DAILY_GOAL_VOLUME_ML: 2000,
@@ -268,11 +269,19 @@
         intervalMinutes: CONFIG.DEFAULT_INTERVAL_MINUTES,
         soundEnabled: true,
         notificationsEnabled: false,
-        dailyGoalGlasses: CONFIG.DAILY_GOAL_GLASSES
+        dailyGoalGlasses: CONFIG.DAILY_GOAL_GLASSES,
+        dailyGoalLiters: CONFIG.DEFAULT_GOAL_LITERS || 2
       };
       try {
         const raw = localStorage.getItem(CONFIG.STORAGE_KEYS.SETTINGS);
-        return raw ? Object.assign(defaults, JSON.parse(raw)) : defaults;
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (!parsed.dailyGoalLiters && parsed.dailyGoalGlasses) {
+            parsed.dailyGoalLiters = (parsed.dailyGoalGlasses * CONFIG.VOLUME_PER_GLASS_ML) / 1000;
+          }
+          return Object.assign(defaults, parsed);
+        }
+        return defaults;
       } catch (e) {
         return defaults;
       }
@@ -686,6 +695,12 @@
 
     // Hydration Goal Section
     streakCount: document.getElementById('streakCount'),
+    goalCardSubtitle: document.getElementById('goalCardSubtitle'),
+    currentGoalChip: document.getElementById('currentGoalChip'),
+    targetVolumeText: document.getElementById('targetVolumeText'),
+    goalPills: document.querySelectorAll('.goal-pill-btn'),
+    customGoalInput: document.getElementById('customGoalInput'),
+    applyCustomGoalBtn: document.getElementById('applyCustomGoalBtn'),
     gaugeWaterLevel: document.getElementById('gaugeWaterLevel'),
     goalPercentage: document.getElementById('goalPercentage'),
     goalProgressStatus: document.getElementById('goalProgressStatus'),
@@ -743,20 +758,41 @@
     DOM.statActiveTime.textContent = formatTimeHHMMSS(appData.activeSecondsToday);
 
     // Hydration Goal Breakdown
-    const targetGlasses = appSettings.dailyGoalGlasses || CONFIG.DAILY_GOAL_GLASSES;
-    const targetVolume = targetGlasses * CONFIG.VOLUME_PER_GLASS_ML;
+    const targetLiters = appSettings.dailyGoalLiters || 2;
+    const targetVolume = Math.round(targetLiters * 1000);
+    const targetGlasses = Math.max(1, Math.round(targetVolume / CONFIG.VOLUME_PER_GLASS_ML));
     const percent = Math.min(100, Math.round((totalMl / targetVolume) * 100));
 
     DOM.goalPercentage.textContent = `${percent}%`;
     DOM.glassesDrankText.textContent = totalGlasses;
     DOM.targetGlassesText.textContent = targetGlasses;
     DOM.volumeDrankText.textContent = totalMl;
+    if (DOM.targetVolumeText) {
+      DOM.targetVolumeText.textContent = `${targetVolume} ml (${targetLiters} L)`;
+    }
+    if (DOM.currentGoalChip) {
+      DOM.currentGoalChip.textContent = `${targetLiters} L (${targetVolume} ml)`;
+    }
+    if (DOM.goalCardSubtitle) {
+      DOM.goalCardSubtitle.textContent = `Target: ${targetGlasses} glasses (${targetVolume} ml / ${targetLiters} L)`;
+    }
 
     const remainingMl = Math.max(0, targetVolume - totalMl);
-    DOM.remainingGoalText.textContent = `${remainingMl} ml`;
+    const remainingL = (remainingMl / 1000).toFixed(1);
+    DOM.remainingGoalText.textContent = `${remainingMl} ml (${remainingL} L)`;
 
     // Gauge water fill height
     DOM.gaugeWaterLevel.style.height = `${percent}%`;
+
+    // Highlight matching goal preset pill
+    DOM.goalPills.forEach(pill => {
+      const pLit = parseFloat(pill.getAttribute('data-liters'));
+      if (pLit === targetLiters) {
+        pill.classList.add('active');
+      } else {
+        pill.classList.remove('active');
+      }
+    });
 
     // Goal Subtitle Status
     if (percent >= 100) {
@@ -1263,6 +1299,21 @@
     }
   }
 
+  // Set Daily Hydration Goal in Liters (e.g. 2, 4, 6, 8 or custom)
+  function setDailyGoalLiters(liters) {
+    let val = parseFloat(liters);
+    if (isNaN(val) || val <= 0) val = 2;
+    val = Math.round(val * 10) / 10;
+    if (val > 25) val = 25;
+
+    appSettings.dailyGoalLiters = val;
+    appSettings.dailyGoalGlasses = Math.max(1, Math.round((val * 1000) / CONFIG.VOLUME_PER_GLASS_ML));
+    StorageManager.saveSettings(appSettings);
+
+    renderDashboardMetrics();
+    Toast.show(`Daily hydration target set to ${val} L (${Math.round(val * 1000)} ml)!`, 'info');
+  }
+
   // Toggle Sound
   function toggleSound() {
     SoundSystem.warmUp();
@@ -1407,6 +1458,35 @@
       }
     });
 
+    // Goal Target Preset Pills (2L, 3L, 4L, 6L, 8L)
+    DOM.goalPills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        const liters = parseFloat(pill.getAttribute('data-liters'));
+        setDailyGoalLiters(liters);
+      });
+    });
+
+    // Custom Goal Input
+    if (DOM.applyCustomGoalBtn) {
+      DOM.applyCustomGoalBtn.addEventListener('click', () => {
+        const val = parseFloat(DOM.customGoalInput.value);
+        if (!isNaN(val) && val >= 0.5 && val <= 25) {
+          setDailyGoalLiters(val);
+          DOM.customGoalInput.value = '';
+        } else {
+          Toast.show('Please enter a valid target between 0.5 and 25 Liters.', 'warning');
+        }
+      });
+    }
+
+    if (DOM.customGoalInput) {
+      DOM.customGoalInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          DOM.applyCustomGoalBtn.click();
+        }
+      });
+    }
+
     // Reminder Modal Actions
     DOM.overlayDoneBtn.addEventListener('click', handleDoneDrinking);
     DOM.overlaySkipBtn.addEventListener('click', handleCrossDismiss);
@@ -1526,6 +1606,7 @@
     reset: resetCountdown,
     logDrink: handleManualDrink,
     setInterval: setIntervalMinutes,
+    setGoal: setDailyGoalLiters,
     resetStats: resetDailyStatistics,
     getState: () => ({ timerState, appSettings, appData })
   };
